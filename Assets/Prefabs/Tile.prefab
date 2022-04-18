@@ -96,7 +96,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bc5089bb34f1445278e04ee00666f8b9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  position: {x: 0, y: 0, z: 0}
+  position: {x: 0, y: 0}
   state: 0
   originTile: 0
   open: {fileID: 1310173021928012103, guid: 3763a5e6d6af547bda74e12c32cb2126, type: 3}
@@ -115,5 +115,5 @@ BoxCollider:
   m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 0.25, y: 0.25, z: -0.01}
+  m_Size: {x: 0.25, y: 0.25, z: 0.04}
   m_Center: {x: 0, y: 0, z: 0}

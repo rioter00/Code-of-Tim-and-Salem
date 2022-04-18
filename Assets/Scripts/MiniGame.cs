@@ -11,20 +11,26 @@ namespace drnick
 
         [SerializeField]
         private Vector2Int gridSize;
-        [Tooltip("Multiple of base tile 1"), SerializeField]
-        public float tileSize;
+        float tileSize;
+        //
+        public Camera mainCamera;
         public TileGrid activeGrid;
-
+        public int activeCheckLimiter;
+        public int activeCheckCount;
+        public LayerMask tileGridMask;
         //
         public float tickTime;
         float currentTime;
         public bool gameStarted = false;
+
 
         // Start is called before the first frame update
         void Start()
         {
             generateGrids();
             currentTime = tickTime;
+            mainCamera = (mainCamera == null) ? Camera.main : null;
+            Invoke("startGame", 4f);
         }
 
         // Update is called once per frame
@@ -45,12 +51,33 @@ namespace drnick
                     currentTime = tickTime;
                     foreach (CubeFace face in faces)
                     {
+                        if (activeGrid == face.grid) continue;
                         face.grid?.spread();
                     }
                 }
             }
         }
 
+        private void FixedUpdate()
+        {
+            activeCheckCount++;
+            if (activeCheckCount % activeCheckLimiter != 0)
+            {
+                return;
+            }
+            
+            activeCheckCount = 0;
+            if (Physics.Raycast(mainCamera.transform.position, Vector3.forward, out RaycastHit hitInfo, 1000, tileGridMask))
+            {
+                //print("hit! " + hitInfo.collider.gameObject.name);
+                if (hitInfo.collider.transform.parent.TryGetComponent(out TileGrid tileGrid))
+                {
+                    activeGrid = tileGrid;
+                }
+            }
+            
+        }
+        
         public void startGame()
         {
             gameStarted = true;
@@ -77,6 +104,11 @@ namespace drnick
 
             foreach (CubeFace face in faces)
             {
+                // math to resize the tiles -- demo size is 10 x 10 with a size of 1
+                // 100 x 100 would be .1
+
+                tileSize = (float) 10 / gridSize.x;
+            
                 face.grid?.setSizes(gridSize, tileSize);
                 face.grid?.generateGrid();
             }

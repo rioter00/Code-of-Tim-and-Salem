@@ -14,9 +14,14 @@ namespace drnick
         [Tooltip("size by size"), SerializeField]
         public float tileSize;
 
+        [Tooltip("How far off the grid face the tiles sit"), SerializeField]
+        public float tileZOffset = .5f;
+        Vector3 tileInitRotOffest;
+
         private Tile[,] tiles;
         public List<Tile> openTiles = new List<Tile>();
         public List<Tile> filledTiles = new List<Tile>();
+
 
         public Dictionary<TileDirection, Vector2Int> fourDirectionsDictionary = new Dictionary<TileDirection, Vector2Int>
         {
@@ -39,13 +44,6 @@ namespace drnick
             new Vector2Int (-1, 1),
         };
 
-
-        // Start is called before the first frame update
-        void Start()
-        {
-  
-        }
-
         /// <summary>
         /// Set GridSize and TileSizes
         /// </summary>
@@ -59,21 +57,10 @@ namespace drnick
             float offset = (gridSize.x % 2 == 0) ? tileSize * .5f : 0;
 
             float startOffset = (gridSize.x / 2) * tileSize - offset;
-            startPoint.position -= new Vector3(startOffset, startOffset, 0);
-        }
-
-        // Update is called once per frame
-        void Update()
-        {
-            //if (Input.GetKeyDown(KeyCode.Space))
-            //{
-            //    spread();
-            //}
-        }
-
-        void setGridSize(Vector2Int gridSize)
-        {
-            this.gridSize = gridSize;
+            print("start offset " + startOffset);
+            print("startpos before" + startPoint.localPosition);
+            startPoint.localPosition = new Vector3(startPoint.localPosition.x - startOffset, startPoint.localPosition.y - startOffset, startPoint.localPosition.z-tileZOffset);
+            print("startpos after" + startPoint.localPosition);
         }
 
         /// <summary>
@@ -94,8 +81,17 @@ namespace drnick
             {
                 for (int j = 0; j < gridSize.x; j++)
                 {
-                    Vector3 newPos = new Vector3(startPoint.position.x + i * tileSize, startPoint.position.y + j * tileSize, Mathf.Epsilon);
-                    tiles[i, j] = Instantiate(tilePrefab, newPos, Quaternion.identity, null).GetComponent<Tile>();
+                    Vector3 newPos = new Vector3(startPoint.localPosition.x + i * tileSize, startPoint.localPosition.y + j * tileSize, startPoint.localPosition.z);
+                    //print("new Tile: " + newPos);
+                    tiles[i, j] = Instantiate(tilePrefab, Vector3.zero, Quaternion.Euler(transform.rotation.eulerAngles + tileInitRotOffest), transform).GetComponent<Tile>();
+
+                    // set position
+                    tiles[i, j].transform.localPosition = newPos;
+
+                    // rescale tile
+                    float _scale = tiles[i, j].transform.localScale.x;
+                    tiles[i, j].transform.localScale = new Vector3(tileSize * _scale, tileSize * _scale, 1);
+                    // clear state
                     tiles[i, j].clearVirus();
                     openTiles.Add(tiles[i, j]);
                     tiles[i, j].setPosition(new Vector2Int(i,j));
@@ -142,15 +138,14 @@ namespace drnick
 
         public void spread()
         {
-            Debug.Log("Filled: " + filledTiles.Count + " " + (gridSize.x * gridSize.y));
             if(filledTiles.Count >= (gridSize.x * gridSize.y))
             {
-                Debug.LogError("Grid Filled");
+                Debug.LogWarning("Grid Filled");
                 return;
             }
             // random select filled cell
-            //Debug.Log(getOpenNeighbor(getRandomFilledTile()).getPosition());
             Tile newTile;
+
             do
             {
                 newTile = getOpenNeighbor(getRandomFilledTile());
@@ -170,11 +165,10 @@ namespace drnick
 
             do
             {
-                Debug.Log("Starting cycle..");
                 TileDirection dir = (TileDirection)Random.Range(0, 4);
                 if (dirsChecked.Contains(dir))
                 {
-                    Debug.Log("Dir already checked; Repeating random search");
+                    //Debug.Log("Dir already checked; Repeating random search");
                     continue;
                 }
 
@@ -182,12 +176,11 @@ namespace drnick
 
                 Vector2Int tilePos = new Vector2Int(tile.position.x + checkVector.x, tile.position.y + checkVector.y);
 
-                Debug.Log("tile pos: " + tilePos);
                 if (tilePos.x < 0 || tilePos.x > (gridSize.x - 1) || tilePos.y < 0 || tilePos.y > (gridSize.y - 1))
                 {
-                    Debug.Log("Tile pos out of bounds, repeating: " + tilePos);
+                    //Debug.Log("Tile pos out of bounds, repeating: " + tilePos);
                     dirsChecked.Add(dir);
-                    Debug.Log("Dirs Checked: " + dirsChecked.Count);
+                    //Debug.Log("Dirs Checked: " + dirsChecked.Count);
                     continue;
                 }
 
@@ -198,7 +191,7 @@ namespace drnick
                 else
                 {
                     dirsChecked.Add(dir);
-                    Debug.Log("Dirs Checked: " + dirsChecked.Count);
+                    //Debug.Log("Dirs Checked: " + dirsChecked.Count);
                 }
             } while (dirsChecked.Count < 4);
 
